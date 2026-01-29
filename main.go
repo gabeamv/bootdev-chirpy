@@ -91,7 +91,7 @@ func (c *apiConfig) HandlerFileServerReset(w http.ResponseWriter, r *http.Reques
 		log.Printf("%v", err)
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(http.StatusForbidden)
-		w.Write([]byte(string(http.StatusForbidden) + fmt.Sprintf("%v", err)))
+		w.Write([]byte(fmt.Sprintf("%v", err)))
 		return
 	}
 	c.fileserverHits.Swap(0)
@@ -101,7 +101,7 @@ func (c *apiConfig) HandlerFileServerReset(w http.ResponseWriter, r *http.Reques
 		log.Printf("%v", err)
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(string(http.StatusInternalServerError) + fmt.Sprintf("%v", err)))
+		w.Write([]byte(fmt.Sprintf("%v", err)))
 		return
 	}
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
@@ -217,7 +217,7 @@ func (c *apiConfig) HandlerRegisterUser(w http.ResponseWriter, r *http.Request) 
 		log.Printf("%v", err)
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(string(http.StatusInternalServerError) + fmt.Sprintf("%v", err)))
+		w.Write([]byte(fmt.Sprintf("%v", err)))
 		return
 	}
 	resp := response{Id: user.ID, CreatedAt: user.CreatedAt, UpdatedAt: user.UpdatedAt, Email: user.Email}
@@ -227,7 +227,7 @@ func (c *apiConfig) HandlerRegisterUser(w http.ResponseWriter, r *http.Request) 
 		log.Printf("%v", err)
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(string(http.StatusInternalServerError) + fmt.Sprintf("%v", err)))
+		w.Write([]byte(fmt.Sprintf("%v", err)))
 		return
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
