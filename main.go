@@ -1,33 +1,53 @@
 package main
 
 import (
+	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"sync/atomic"
+	"time"
+
+	"bootdev-chirpy/internal/database"
+
+	"github.com/google/uuid"
+	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 )
 
 type apiConfig struct {
 	fileserverHits atomic.Int32
+	dbQueries      *database.Queries
 }
 
 func main() {
+	err := godotenv.Load(".env")
+	if err != nil {
+		fmt.Println("error loading env")
+	}
+	dbURL := os.Getenv("DB_URL")
+	db, err := sql.Open("postgres", dbURL)
+	queries := database.New(db)
+
 	mux := http.NewServeMux()
-	config := apiConfig{}
+	config := apiConfig{dbQueries: queries}
 
 	mux.Handle("/app/", http.StripPrefix("/app", config.middlewareMetricsInc(http.FileServer(http.Dir(".")))))
 	mux.HandleFunc("GET /admin/metrics", config.HandlerFileServerHits)
 	mux.HandleFunc("POST /admin/reset", config.HandlerFileServerReset)
 	mux.HandleFunc("GET /api/healthz", HandlerReadiness)
 	mux.HandleFunc("POST /api/validate_chirp", ValidateChirp)
+	mux.HandleFunc("POST /api/users", config.HandlerRegisterUser)
 
 	server := &http.Server{
 		Handler: mux,
 		Addr:    ":8080",
 	}
-	err := server.ListenAndServe()
+	err = server.ListenAndServe()
 	if err != nil {
 		fmt.Println(fmt.Errorf("error listening on server: %w", err))
 	}
@@ -65,7 +85,25 @@ func (c *apiConfig) HandlerFileServerHits(w http.ResponseWriter, req *http.Reque
 }
 
 func (c *apiConfig) HandlerFileServerReset(w http.ResponseWriter, r *http.Request) {
+	platform := os.Getenv("PLATFORM")
+	if platform != "dev" {
+		err := fmt.Errorf("error, forbidden from calling this endpoint: %w")
+		log.Printf("%v", err)
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(http.StatusForbidden)
+		w.Write([]byte(string(http.StatusForbidden) + fmt.Sprintf("%v", err)))
+		return
+	}
 	c.fileserverHits.Swap(0)
+	err := c.dbQueries.DeleteAllUsers(context.Background())
+	if err != nil {
+		err = fmt.Errorf("error deleting all users: %w", err)
+		log.Printf("%v", err)
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(string(http.StatusInternalServerError) + fmt.Sprintf("%v", err)))
+		return
+	}
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	resp := fmt.Sprintf("Hits: %v", c.fileserverHits.Load())
@@ -148,4 +186,51 @@ func CleanBody(body string) string {
 		}
 	}
 	return strings.TrimSpace(cleanedBody)
+}
+
+// TODO: needs to be cleaned up, repeating error checks getting messy.
+func (c *apiConfig) HandlerRegisterUser(w http.ResponseWriter, r *http.Request) {
+	type request struct {
+		Email string `json:"email"`
+	}
+	type response struct {
+		Id        uuid.UUID `json:"id"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+		Email     string    `json:"email"`
+	}
+	var req request
+	decoder := json.NewDecoder(r.Body)
+	defer r.Body.Close()
+	err := decoder.Decode(&req)
+	if err != nil {
+		log.Printf("error decoding for %v: %v\n", r.Body)
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(string(http.StatusInternalServerError)))
+		return
+	}
+	now := time.Now().UTC()
+	user, err := c.dbQueries.CreateUser(context.Background(), database.CreateUserParams{CreatedAt: now, UpdatedAt: now, Email: req.Email})
+	if err != nil {
+		err = fmt.Errorf("error creating user. req=%v: %w", req, err)
+		log.Printf("%v", err)
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(string(http.StatusInternalServerError) + fmt.Sprintf("%v", err)))
+		return
+	}
+	resp := response{Id: user.ID, CreatedAt: user.CreatedAt, UpdatedAt: user.UpdatedAt, Email: user.Email}
+	respData, err := json.Marshal(resp)
+	if err != nil {
+		err = fmt.Errorf("error marshalling user data to bytes. req=%v: %w", req, err)
+		log.Printf("%v", err)
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(string(http.StatusInternalServerError) + fmt.Sprintf("%v", err)))
+		return
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusCreated)
+	w.Write(respData)
 }
