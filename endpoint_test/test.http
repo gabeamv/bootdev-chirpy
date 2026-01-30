@@ -1,8 +1,23 @@
-POST http://localhost:8080/admin/reset
+POST http://localhost:8080/admin/reset HTTP/1.1
 
-POST http://localhost:8080/api/users
-content-type: application/json
+###
+
+GET http://localhost:8080/api/healthz HTTP/1.1
+
+###
+
+POST http://localhost:8080/api/users 
+Content-Type: application/json
 
 {
     "email": "gamvred7@gmail.com"
+}
+
+###
+
+POST http://localhost:8080/api/users
+Content-Type: application/json
+
+{
+    "email": "testtest@gmail.com"
 }
