@@ -34,6 +34,7 @@ func (c *ApiConfig) HandlerFileServerReset(w http.ResponseWriter, r *http.Reques
 		msg := "error deleting all users"
 		err = fmt.Errorf("%v: %w", msg, err)
 		ResponseError(w, http.StatusInternalServerError, msg, err)
+		return
 	}
 	resp := fmt.Sprintf("Hits: %v", c.FileserverHits.Load())
 	ResponseJSON(w, http.StatusOK, resp)

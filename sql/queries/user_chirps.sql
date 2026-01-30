@@ -7,3 +7,11 @@ VALUES (
     $4
 )
 RETURNING *;
+
+-- name: GetAllChirps :many
+SELECT * FROM user_chirps
+ORDER BY created_at;
+
+-- name: GetChirp :one
+SELECT * FROM user_chirps
+WHERE id = $1;

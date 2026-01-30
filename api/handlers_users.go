@@ -35,6 +35,7 @@ func (c *ApiConfig) HandlerRegisterUser(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		err = fmt.Errorf("error creating user. req=%v: %w", req, err)
 		ResponseError(w, http.StatusInternalServerError, err.Error(), err)
+		return
 	}
 	resp := response{Id: user.ID, CreatedAt: user.CreatedAt, UpdatedAt: user.UpdatedAt, Email: user.Email}
 	ResponseJSON(w, http.StatusCreated, resp)

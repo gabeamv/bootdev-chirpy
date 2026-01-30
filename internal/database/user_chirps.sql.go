@@ -47,3 +47,55 @@ func (q *Queries) CreateUserChirp(ctx context.Context, arg CreateUserChirpParams
 	)
 	return i, err
 }
+
+const getAllChirps = `-- name: GetAllChirps :many
+SELECT id, created_at, updated_at, body, user_id FROM user_chirps
+ORDER BY created_at
+`
+
+func (q *Queries) GetAllChirps(ctx context.Context) ([]UserChirp, error) {
+	rows, err := q.db.QueryContext(ctx, getAllChirps)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []UserChirp
+	for rows.Next() {
+		var i UserChirp
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Body,
+			&i.UserID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getChirp = `-- name: GetChirp :one
+SELECT id, created_at, updated_at, body, user_id FROM user_chirps
+WHERE id = $1
+`
+
+func (q *Queries) GetChirp(ctx context.Context, id uuid.UUID) (UserChirp, error) {
+	row := q.db.QueryRowContext(ctx, getChirp, id)
+	var i UserChirp
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Body,
+		&i.UserID,
+	)
+	return i, err
+}

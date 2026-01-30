@@ -21,3 +21,7 @@ Content-Type: application/json
 {
     "email": "testtest@gmail.com"
 }
+
+###
+
+GET http://localhost:8080/api/chirps
