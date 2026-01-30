@@ -26,7 +26,11 @@ go.work.sum
 
 # env file
 .env
+
+*.DS_Store
+
 out
+bootdev-chirpy
 
 # Editor/IDE
 # .idea/
