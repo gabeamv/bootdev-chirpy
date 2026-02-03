@@ -13,6 +13,12 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	SECOND = 1
+	MINUTE = SECOND * 60
+	HOUR   = MINUTE * 60
+)
+
 func (c *ApiConfig) HandlerRegisterUser(w http.ResponseWriter, r *http.Request) {
 	type request struct {
 		Email    string `json:"email"`
@@ -54,14 +60,16 @@ func (c *ApiConfig) HandlerRegisterUser(w http.ResponseWriter, r *http.Request) 
 
 func (c *ApiConfig) HandlerLoginUser(w http.ResponseWriter, r *http.Request) {
 	type request struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
+		Email            string `json:"email"`
+		Password         string `json:"password"`
+		ExpiresInSeconds int    `json:"expires_in_seconds"`
 	}
 	type response struct {
 		Id        uuid.UUID `json:"id"`
 		CreatedAt time.Time `json:"created_at"`
 		UpdatedAt time.Time `json:"updated_at"`
 		Email     string    `json:"email"`
+		Token     string    `json:"token"`
 	}
 	var req request
 	decoder := json.NewDecoder(r.Body)
@@ -89,6 +97,18 @@ func (c *ApiConfig) HandlerLoginUser(w http.ResponseWriter, r *http.Request) {
 		ResponseError(w, http.StatusUnauthorized, err.Error(), err)
 		return
 	}
-	resp := response{Id: user.ID, CreatedAt: user.CreatedAt, UpdatedAt: user.UpdatedAt, Email: user.Email}
+	var expireInSeconds int
+	if req.ExpiresInSeconds == 0 || req.ExpiresInSeconds >= HOUR {
+		expireInSeconds = HOUR
+	} else {
+		expireInSeconds = req.ExpiresInSeconds
+	}
+	token, err := auth.MakeJWT(user.ID, c.Secret, time.Duration(expireInSeconds)*time.Second)
+	if err != nil {
+		err = fmt.Errorf("error making jwt for user '%v': %w", user, err)
+		ResponseError(w, http.StatusInternalServerError, err.Error(), err)
+		return
+	}
+	resp := response{Id: user.ID, CreatedAt: user.CreatedAt, UpdatedAt: user.UpdatedAt, Email: user.Email, Token: token}
 	ResponseJSON(w, http.StatusOK, resp)
 }

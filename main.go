@@ -21,9 +21,10 @@ func main() {
 	dbURL := os.Getenv("DB_URL")
 	db, err := sql.Open("postgres", dbURL)
 	queries := database.New(db)
+	secret := os.Getenv("SECRET")
 
 	mux := http.NewServeMux()
-	config := api.ApiConfig{DbQueries: queries}
+	config := api.ApiConfig{DbQueries: queries, Secret: secret}
 
 	mux.Handle("/app/", http.StripPrefix("/app", config.MiddlewareMetricsInc(http.FileServer(http.Dir(".")))))
 	mux.HandleFunc("GET /admin/metrics", config.HandlerFileServerHits)

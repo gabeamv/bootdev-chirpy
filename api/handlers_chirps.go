@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bootdev-chirpy/internal/auth"
 	"bootdev-chirpy/internal/database"
 	"context"
 	"encoding/json"
@@ -22,17 +23,30 @@ type ChirpResp struct {
 
 func (c *ApiConfig) HandlerAddChirp(w http.ResponseWriter, r *http.Request) {
 	type chirpReq struct {
-		Body   string    `json:"body"`
-		UserID uuid.UUID `json:"user_id"`
+		Body string `json:"body"`
+		//UserID uuid.UUID `json:"user_id"`
 	}
 	type chirpCleaned struct {
 		CleanedBody string `json:"body"`
 	}
 
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		err = fmt.Errorf("error getting token: %w", err)
+		ResponseError(w, http.StatusUnauthorized, err.Error(), err)
+		return
+	}
+	userId, err := auth.ValidateJWT(token, c.Secret)
+	if err != nil {
+		err = fmt.Errorf("unauthorized request to add chirp: %w", err)
+		ResponseError(w, http.StatusUnauthorized, err.Error(), err)
+		return
+	}
+
 	var bodyChirp chirpReq
 	decoder := json.NewDecoder(r.Body)
 	defer r.Body.Close()
-	err := decoder.Decode(&bodyChirp)
+	err = decoder.Decode(&bodyChirp)
 	if err != nil {
 		err := fmt.Errorf("error decoding chirp: %v", err)
 		ResponseError(w, http.StatusInternalServerError, err.Error(), err)
@@ -50,7 +64,7 @@ func (c *ApiConfig) HandlerAddChirp(w http.ResponseWriter, r *http.Request) {
 	}
 	now := time.Now().UTC()
 	userChirp, err := c.DbQueries.CreateUserChirp(context.Background(), database.CreateUserChirpParams{CreatedAt: now, UpdatedAt: now, Body: bodyChirp.Body,
-		UserID: bodyChirp.UserID})
+		UserID: userId})
 	if err != nil {
 		err = fmt.Errorf("error creating chirp '%v': %w", bodyChirp, err)
 		ResponseError(w, http.StatusInternalServerError, err.Error(), err)
