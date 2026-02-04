@@ -130,3 +130,52 @@ func (c *ApiConfig) HandlerLoginUser(w http.ResponseWriter, r *http.Request) {
 	resp := response{Id: user.ID, CreatedAt: user.CreatedAt, UpdatedAt: user.UpdatedAt, Email: user.Email, Token: accessToken, RefreshToken: refreshToken.Token}
 	ResponseJSON(w, http.StatusOK, resp)
 }
+
+func (c *ApiConfig) HandlerUpdateUser(w http.ResponseWriter, r *http.Request) {
+	type request struct {
+		Password string `json:"password"`
+		Email    string `json:"email"`
+	}
+	type response struct {
+		Id        uuid.UUID `json:"id"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+		Email     string    `json:"email"`
+	}
+	accessToken, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		err = fmt.Errorf("error getting access token: %w", err)
+		ResponseError(w, http.StatusUnauthorized, err.Error(), err)
+		return
+	}
+	userID, err := auth.ValidateJWT(accessToken, c.Secret)
+	if err != nil {
+		err = fmt.Errorf("error validating access token '%v': %w", accessToken, err)
+		ResponseError(w, http.StatusUnauthorized, err.Error(), err)
+		return
+	}
+	var req request
+	decoder := json.NewDecoder(r.Body)
+	defer r.Body.Close()
+	err = decoder.Decode(&req)
+	if err != nil {
+		err = fmt.Errorf("error decoding request for user '%v': %w", userID, err)
+		ResponseError(w, http.StatusInternalServerError, err.Error(), err)
+		return
+	}
+	hashedPassword, err := auth.HashPassword(req.Password)
+	if err != nil {
+		err = fmt.Errorf("error hashing received password for user '%v': %w", userID, err)
+		ResponseError(w, http.StatusInternalServerError, err.Error(), err)
+		return
+	}
+	userUpdate, err := c.DbQueries.UpdateUserEmailPassword(context.Background(), database.UpdateUserEmailPasswordParams{ID: userID, Email: req.Email,
+		HashedPassword: sql.NullString{String: hashedPassword, Valid: true}})
+	if err != nil {
+		err = fmt.Errorf("error updating user email and password for user '%v': %w", userID, err)
+		ResponseError(w, http.StatusInternalServerError, err.Error(), err)
+		return
+	}
+	resp := response{Id: userUpdate.ID, CreatedAt: userUpdate.CreatedAt, UpdatedAt: userUpdate.UpdatedAt, Email: userUpdate.Email}
+	ResponseJSON(w, http.StatusOK, resp)
+}

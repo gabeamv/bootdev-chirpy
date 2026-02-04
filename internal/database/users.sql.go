@@ -9,6 +9,8 @@ import (
 	"context"
 	"database/sql"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 const createUser = `-- name: CreateUser :one
@@ -89,6 +91,38 @@ func (q *Queries) GetUserByRefreshToken(ctx context.Context, token string) (User
 		&i.UpdatedAt,
 		&i.Email,
 		&i.HashedPassword,
+	)
+	return i, err
+}
+
+const updateUserEmailPassword = `-- name: UpdateUserEmailPassword :one
+UPDATE users
+SET email = $2, hashed_password = $3
+WHERE id = $1
+RETURNING id, created_at, updated_at, email
+`
+
+type UpdateUserEmailPasswordParams struct {
+	ID             uuid.UUID
+	Email          string
+	HashedPassword sql.NullString
+}
+
+type UpdateUserEmailPasswordRow struct {
+	ID        uuid.UUID
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	Email     string
+}
+
+func (q *Queries) UpdateUserEmailPassword(ctx context.Context, arg UpdateUserEmailPasswordParams) (UpdateUserEmailPasswordRow, error) {
+	row := q.db.QueryRowContext(ctx, updateUserEmailPassword, arg.ID, arg.Email, arg.HashedPassword)
+	var i UpdateUserEmailPasswordRow
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Email,
 	)
 	return i, err
 }

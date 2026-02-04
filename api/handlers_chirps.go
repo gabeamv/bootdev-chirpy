@@ -137,3 +137,43 @@ func (c *ApiConfig) HandlerGetChirp(w http.ResponseWriter, r *http.Request) {
 	resp := ChirpResp{Id: chirp.ID, CreatedAt: chirp.CreatedAt, UpdatedAt: chirp.UpdatedAt, Body: chirp.Body, UserId: chirp.UserID}
 	ResponseJSON(w, http.StatusOK, resp)
 }
+
+func (c *ApiConfig) HandlerDeleteChirp(w http.ResponseWriter, r *http.Request) {
+
+	chirpID, err := uuid.Parse(r.PathValue("chirpID"))
+	if err != nil {
+		err = fmt.Errorf("error parsing path value 'chirpID' into type UUID: %w", err)
+		ResponseError(w, http.StatusNotFound, err.Error(), err)
+		return
+	}
+	accessToken, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		err = fmt.Errorf("error getting access token: %w", err)
+		ResponseError(w, http.StatusUnauthorized, err.Error(), err)
+		return
+	}
+	userID, err := auth.ValidateJWT(accessToken, c.Secret)
+	if err != nil {
+		err = fmt.Errorf("error validating access token '%v': %w", accessToken, err)
+		ResponseError(w, http.StatusUnauthorized, err.Error(), err)
+		return
+	}
+	chirp, err := c.DbQueries.GetChirp(context.Background(), chirpID)
+	if err != nil {
+		err = fmt.Errorf("error getting chirp for user '%v': %w", userID, err)
+		ResponseError(w, http.StatusInternalServerError, err.Error(), err)
+		return
+	}
+	if chirp.UserID != userID {
+		err = fmt.Errorf("error, user '%v' does not own chirp '%v'", userID, chirpID)
+		ResponseError(w, http.StatusForbidden, err.Error(), err)
+		return
+	}
+	err = c.DbQueries.DeleteChirp(context.Background(), chirpID)
+	if err != nil {
+		err = fmt.Errorf("error deleting chirp '%v': %w", chirp, err)
+		ResponseError(w, http.StatusForbidden, err.Error(), err)
+		return
+	}
+	ResponseJSON(w, http.StatusNoContent, struct{}{})
+}

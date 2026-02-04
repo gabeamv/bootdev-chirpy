@@ -37,6 +37,8 @@ func main() {
 	mux.HandleFunc("POST /api/login", config.HandlerLoginUser)
 	mux.HandleFunc("POST /api/refresh", config.HandlerRefreshAccessToken)
 	mux.HandleFunc("POST /api/revoke", config.HandlerRevokeRefreshToken)
+	mux.HandleFunc("PUT /api/users", config.HandlerUpdateUser)
+	mux.HandleFunc("DELETE /api/chirps/{chirpID}", config.HandlerDeleteChirp)
 
 	server := &http.Server{
 		Handler: mux,
