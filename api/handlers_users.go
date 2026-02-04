@@ -17,6 +17,7 @@ const (
 	SECOND = 1
 	MINUTE = SECOND * 60
 	HOUR   = MINUTE * 60
+	DAY    = HOUR * 24
 )
 
 func (c *ApiConfig) HandlerRegisterUser(w http.ResponseWriter, r *http.Request) {
@@ -60,16 +61,17 @@ func (c *ApiConfig) HandlerRegisterUser(w http.ResponseWriter, r *http.Request) 
 
 func (c *ApiConfig) HandlerLoginUser(w http.ResponseWriter, r *http.Request) {
 	type request struct {
-		Email            string `json:"email"`
-		Password         string `json:"password"`
-		ExpiresInSeconds int    `json:"expires_in_seconds"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
+		//ExpiresInSeconds int    `json:"expires_in_seconds"`
 	}
 	type response struct {
-		Id        uuid.UUID `json:"id"`
-		CreatedAt time.Time `json:"created_at"`
-		UpdatedAt time.Time `json:"updated_at"`
-		Email     string    `json:"email"`
-		Token     string    `json:"token"`
+		Id           uuid.UUID `json:"id"`
+		CreatedAt    time.Time `json:"created_at"`
+		UpdatedAt    time.Time `json:"updated_at"`
+		Email        string    `json:"email"`
+		Token        string    `json:"token"`
+		RefreshToken string    `json:"refresh_token"`
 	}
 	var req request
 	decoder := json.NewDecoder(r.Body)
@@ -97,18 +99,34 @@ func (c *ApiConfig) HandlerLoginUser(w http.ResponseWriter, r *http.Request) {
 		ResponseError(w, http.StatusUnauthorized, err.Error(), err)
 		return
 	}
-	var expireInSeconds int
-	if req.ExpiresInSeconds == 0 || req.ExpiresInSeconds >= HOUR {
-		expireInSeconds = HOUR
-	} else {
-		expireInSeconds = req.ExpiresInSeconds
-	}
-	token, err := auth.MakeJWT(user.ID, c.Secret, time.Duration(expireInSeconds)*time.Second)
+	accessExpireInSeconds := HOUR
+	accessToken, err := auth.MakeJWT(user.ID, c.Secret, time.Duration(accessExpireInSeconds)*time.Second)
 	if err != nil {
 		err = fmt.Errorf("error making jwt for user '%v': %w", user, err)
 		ResponseError(w, http.StatusInternalServerError, err.Error(), err)
 		return
 	}
-	resp := response{Id: user.ID, CreatedAt: user.CreatedAt, UpdatedAt: user.UpdatedAt, Email: user.Email, Token: token}
+	refreshTokenString, err := auth.MakeRefreshToken()
+	if err != nil {
+		err = fmt.Errorf("error generating refresh token for user '%v': %w", user, err)
+		ResponseError(w, http.StatusInternalServerError, err.Error(), err)
+		return
+	}
+	now := time.Now().UTC()
+	refreshExpireInSeconds := DAY * 60
+	refreshExpire := now.Add(time.Duration(refreshExpireInSeconds) * time.Second)
+	refreshToken, err := c.DbQueries.CreateRefreshToken(context.Background(), database.CreateRefreshTokenParams{
+		Token:     refreshTokenString,
+		CreatedAt: now,
+		UpdatedAt: now,
+		UserID:    user.ID,
+		ExpireAt:  refreshExpire,
+	})
+	if err != nil {
+		err = fmt.Errorf("error adding refresh token to database for user '%v': %w", err)
+		ResponseError(w, http.StatusInternalServerError, err.Error(), err)
+		return
+	}
+	resp := response{Id: user.ID, CreatedAt: user.CreatedAt, UpdatedAt: user.UpdatedAt, Email: user.Email, Token: accessToken, RefreshToken: refreshToken.Token}
 	ResponseJSON(w, http.StatusOK, resp)
 }

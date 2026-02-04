@@ -45,3 +45,5 @@ func TestWrongSecret(t *testing.T) {
 		t.Fatal(diff)
 	}
 }
+
+// TODO: make a test case for auth.GetBearerToken()
