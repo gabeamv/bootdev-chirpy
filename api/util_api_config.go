@@ -9,4 +9,5 @@ type ApiConfig struct {
 	FileserverHits atomic.Int32
 	DbQueries      *database.Queries
 	Secret         string
+	PolkaKey       string
 }

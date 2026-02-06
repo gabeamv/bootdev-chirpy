@@ -26,10 +26,11 @@ func (c *ApiConfig) HandlerRegisterUser(w http.ResponseWriter, r *http.Request) 
 		Password string `json:"password"`
 	}
 	type response struct {
-		Id        uuid.UUID `json:"id"`
-		CreatedAt time.Time `json:"created_at"`
-		UpdatedAt time.Time `json:"updated_at"`
-		Email     string    `json:"email"`
+		Id          uuid.UUID `json:"id"`
+		CreatedAt   time.Time `json:"created_at"`
+		UpdatedAt   time.Time `json:"updated_at"`
+		Email       string    `json:"email"`
+		IsChirpyRed bool      `json:"is_chirpy_red"`
 	}
 	var req request
 	decoder := json.NewDecoder(r.Body)
@@ -55,7 +56,7 @@ func (c *ApiConfig) HandlerRegisterUser(w http.ResponseWriter, r *http.Request) 
 		ResponseError(w, http.StatusInternalServerError, err.Error(), err)
 		return
 	}
-	resp := response{Id: user.ID, CreatedAt: user.CreatedAt, UpdatedAt: user.UpdatedAt, Email: user.Email}
+	resp := response{Id: user.ID, CreatedAt: user.CreatedAt, UpdatedAt: user.UpdatedAt, Email: user.Email, IsChirpyRed: user.IsChirpyRed.Bool}
 	ResponseJSON(w, http.StatusCreated, resp)
 }
 
@@ -70,6 +71,7 @@ func (c *ApiConfig) HandlerLoginUser(w http.ResponseWriter, r *http.Request) {
 		CreatedAt    time.Time `json:"created_at"`
 		UpdatedAt    time.Time `json:"updated_at"`
 		Email        string    `json:"email"`
+		IsChirpyRed  bool      `json:"is_chirpy_red"`
 		Token        string    `json:"token"`
 		RefreshToken string    `json:"refresh_token"`
 	}
@@ -127,7 +129,8 @@ func (c *ApiConfig) HandlerLoginUser(w http.ResponseWriter, r *http.Request) {
 		ResponseError(w, http.StatusInternalServerError, err.Error(), err)
 		return
 	}
-	resp := response{Id: user.ID, CreatedAt: user.CreatedAt, UpdatedAt: user.UpdatedAt, Email: user.Email, Token: accessToken, RefreshToken: refreshToken.Token}
+	resp := response{Id: user.ID, CreatedAt: user.CreatedAt, UpdatedAt: user.UpdatedAt, Email: user.Email, Token: accessToken, RefreshToken: refreshToken.Token,
+		IsChirpyRed: user.IsChirpyRed.Bool}
 	ResponseJSON(w, http.StatusOK, resp)
 }
 

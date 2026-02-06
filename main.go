@@ -22,9 +22,10 @@ func main() {
 	db, err := sql.Open("postgres", dbURL)
 	queries := database.New(db)
 	secret := os.Getenv("SECRET")
+	polkaKey := os.Getenv("POLKA_KEY")
 
 	mux := http.NewServeMux()
-	config := api.ApiConfig{DbQueries: queries, Secret: secret}
+	config := api.ApiConfig{DbQueries: queries, Secret: secret, PolkaKey: polkaKey}
 
 	mux.Handle("/app/", http.StripPrefix("/app", config.MiddlewareMetricsInc(http.FileServer(http.Dir(".")))))
 	mux.HandleFunc("GET /admin/metrics", config.HandlerFileServerHits)
@@ -39,6 +40,7 @@ func main() {
 	mux.HandleFunc("POST /api/revoke", config.HandlerRevokeRefreshToken)
 	mux.HandleFunc("PUT /api/users", config.HandlerUpdateUser)
 	mux.HandleFunc("DELETE /api/chirps/{chirpID}", config.HandlerDeleteChirp)
+	mux.HandleFunc("POST /api/polka/webhooks", config.HandlerPolka)
 
 	server := &http.Server{
 		Handler: mux,
