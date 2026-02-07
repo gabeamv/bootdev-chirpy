@@ -107,6 +107,28 @@ func GetProfanity() map[string]struct{} {
 }
 
 func (c *ApiConfig) HandlerGetAllChirps(w http.ResponseWriter, r *http.Request) {
+	userIDStr := r.URL.Query().Get("author_id")
+	if userIDStr != "" {
+		userID, err := uuid.Parse(userIDStr)
+		if err != nil {
+			err = fmt.Errorf("error parsing user id '%v': %w", userIDStr, err)
+			ResponseError(w, http.StatusInternalServerError, err.Error(), err)
+			return
+		}
+		var resp []ChirpResp
+		userChirps, err := c.DbQueries.GetAllChirpsAuthorID(context.Background(), userID)
+		if err != nil {
+			err = fmt.Errorf("error getting users for user '%v': %w", userID, err)
+			ResponseError(w, http.StatusInternalServerError, err.Error(), err)
+			return
+		}
+		for _, userChirp := range userChirps {
+			chirpResp := ChirpResp{Id: userChirp.ID, CreatedAt: userChirp.CreatedAt, UpdatedAt: userChirp.UpdatedAt, Body: userChirp.Body, UserId: userChirp.UserID}
+			resp = append(resp, chirpResp)
+		}
+		ResponseJSON(w, http.StatusOK, resp)
+		return
+	}
 	chirps, err := c.DbQueries.GetAllChirps(context.Background())
 	if err != nil {
 		err = fmt.Errorf("error getting all chirps: %w", err)
