@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -134,6 +135,20 @@ func (c *ApiConfig) HandlerGetAllChirps(w http.ResponseWriter, r *http.Request) 
 		err = fmt.Errorf("error getting all chirps: %w", err)
 		ResponseError(w, http.StatusInternalServerError, err.Error(), err)
 		return
+	}
+	switch r.URL.Query().Get("sort") {
+	case "desc":
+		sort.Slice(chirps, func(i, j int) bool {
+			chirpICreatedAt := chirps[i].CreatedAt
+			chirpJCreatedAt := chirps[j].CreatedAt
+			return chirpICreatedAt.After(chirpJCreatedAt)
+		})
+	default:
+		sort.Slice(chirps, func(i, j int) bool {
+			chirpICreatedAt := chirps[i].CreatedAt
+			chirpJCreatedAt := chirps[j].CreatedAt
+			return chirpICreatedAt.Before(chirpJCreatedAt)
+		})
 	}
 	var chirpsResp []ChirpResp
 	for _, chirp := range chirps {
