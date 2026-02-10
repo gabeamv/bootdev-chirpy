@@ -64,7 +64,6 @@ func (c *ApiConfig) HandlerLoginUser(w http.ResponseWriter, r *http.Request) {
 	type request struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
-		//ExpiresInSeconds int    `json:"expires_in_seconds"`
 	}
 	type response struct {
 		Id           uuid.UUID `json:"id"`
