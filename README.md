@@ -43,19 +43,19 @@ own built client, or any other client. See the paths below for making requests.
 
 ## API Paths
 
-* /app/...
+* /app/... 
 Description: Retrieves web assets from fileserver.
 
-* GET /admin/metrics
+* GET /admin/metrics 
 Description: Retirieves the number of server requests for fileserver assets.
 
-* POST /admin/reset
+* POST /admin/reset 
 Description: Deletes all registered users and their related data.
 
-* GET /api/healthz
+* GET /api/healthz 
 Description: Retrieves a status code 200 if server is working properly.
 
-* POST /api/users
+* POST /api/users 
 Description: Registers a user to Chirpy.
 Request:
 POST /api/users HTTP/1.1
@@ -65,18 +65,18 @@ Content-Type: application/json
   "email": "walt@breakingbad.com",
   "password": "123456"
 }
-Response:
-201 Created
-HTTP/1.1 201 Created
-Content-Type: application/json
+Response: 
+201 Created 
+HTTP/1.1 201 Created 
+Content-Type: application/json 
 
 {
-  "id": "3311741c-680c-4546-99f3-fc9efac2036c",
-  "email": "walt@breakingbad.com",
-  "is_chirpy_red": false,
-  "created_at": "2026-02-10T12:34:56Z"
-  "updated_at": "2026-02-10T12:34:56Z"
-}
+  "id": "3311741c-680c-4546-99f3-fc9efac2036c", 
+  "email": "walt@breakingbad.com", 
+  "is_chirpy_red": false, 
+  "created_at": "2026-02-10T12:34:56Z" 
+  "updated_at": "2026-02-10T12:34:56Z" 
+} 
 
 * POST /api/chirps
 Description: Adds a chirp for a user.
@@ -119,7 +119,7 @@ Content-Type: application/json
   "updated_at": "2026-02-10T12:34:56Z"
 }
 
-* DELETE /api/chirps/{chirpID}
+* DELETE /api/chirps/{chirpID} 
 Description: Delete a chirp by ID for an authorized user.
 
 * POST /api/polka/webhooks
