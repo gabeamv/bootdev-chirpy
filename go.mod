@@ -1,4 +1,4 @@
-module bootdev-chirpy
+module github.com/gabeamv/bootdev-chirpy
 
 go 1.25.5
 
