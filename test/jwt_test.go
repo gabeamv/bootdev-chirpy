@@ -1,11 +1,11 @@
 package test
 
 import (
-	"bootdev-chirpy/internal/auth"
 	"fmt"
 	"testing"
 	"time"
 
+	"github.com/gabeamv/bootdev-chirpy/internal/auth"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 )

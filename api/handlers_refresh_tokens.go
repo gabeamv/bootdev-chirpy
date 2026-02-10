@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"bootdev-chirpy/internal/auth"
-	"bootdev-chirpy/internal/database"
+	"github.com/gabeamv/bootdev-chirpy/internal/auth"
+	"github.com/gabeamv/bootdev-chirpy/internal/database"
 )
 
 func (c *ApiConfig) HandlerRefreshAccessToken(w http.ResponseWriter, r *http.Request) {

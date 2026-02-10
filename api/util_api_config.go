@@ -1,8 +1,9 @@
 package api
 
 import (
-	"bootdev-chirpy/internal/database"
 	"sync/atomic"
+
+	"github.com/gabeamv/bootdev-chirpy/internal/database"
 )
 
 type ApiConfig struct {

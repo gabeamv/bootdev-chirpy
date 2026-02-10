@@ -1,8 +1,6 @@
 package api
 
 import (
-	"bootdev-chirpy/internal/auth"
-	"bootdev-chirpy/internal/database"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -10,6 +8,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gabeamv/bootdev-chirpy/internal/auth"
+	"github.com/gabeamv/bootdev-chirpy/internal/database"
 	"github.com/google/uuid"
 )
 

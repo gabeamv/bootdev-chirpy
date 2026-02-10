@@ -1,12 +1,12 @@
 package api
 
 import (
-	"bootdev-chirpy/internal/auth"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 
+	"github.com/gabeamv/bootdev-chirpy/internal/auth"
 	"github.com/google/uuid"
 )
 

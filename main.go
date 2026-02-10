@@ -6,9 +6,8 @@ import (
 	"net/http"
 	"os"
 
-	"bootdev-chirpy/api"
-	"bootdev-chirpy/internal/database"
-
+	"github.com/gabeamv/bootdev-chirpy/api"
+	"github.com/gabeamv/bootdev-chirpy/internal/database"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
